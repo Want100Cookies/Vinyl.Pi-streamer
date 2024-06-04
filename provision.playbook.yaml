@@ -1,0 +1,56 @@
+---
+- name: Provision the Pi with all configuration
+  hosts: vinyl.local
+  remote_user: pi
+  become: true
+  tasks:
+    - name: Configure asound with software volume boost
+      ansible.builtin.copy:
+        src: files/asound.conf
+        dest: /etc/asound.conf
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Install darkice and icecast2
+      ansible.builtin.package:
+        name:
+          - darkice
+          - icecast2
+        state: latest
+    - name: Configure darkice
+      ansible.builtin.copy:
+        src: files/darkice.cfg
+        dest: /etc/darkice.cfg
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Disable update-rc.d script for darkice
+      ansible.builtin.command: update-rc.d darkice remove
+    - name: Disable update-rc.d script for icecast2
+      ansible.builtin.command: update-rc.d icecast2 remove
+    - name: Setup darkice service
+      ansible.builtin.copy:
+        src: files/darkice.service
+        dest: /etc/systemd/system/darkice.service
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Setup icecast2 service
+      ansible.builtin.copy:
+        src: files/icecast2.service
+        dest: /etc/systemd/system/icecast2.service
+        owner: root
+        group: root
+        mode: '0644'
+    - name: Enable and start darkice
+      ansible.builtin.systemd_service:
+        name: darkice
+        daemon_reload: true
+        enabled: true
+        state: started
+    - name: Enable and start icecast2
+      ansible.builtin.systemd_service:
+        name: icecast2
+        daemon_reload: true
+        enabled: true
+        state: started
